@@ -1,26 +1,30 @@
 import { DataTypes, Model } from "sequelize";
 import sequelize from "../config/database";
 
-interface MenuInstance {
+interface BookInstance {
   id: string;
   name: string;
   price: number;
   image: string;
+  description: string;
+  type: "new" | "sale";
 }
 
-class Menu extends Model<MenuInstance> implements MenuInstance {
+class Book extends Model<BookInstance> implements BookInstance {
   public id!: string;
   public name!: string;
   public price!: number;
   public image!: string;
+  public description!: string;
+  public type!: "new" | "sale";
 }
 
-Menu.init(
+Book.init(
   {
     id: {
       type: DataTypes.UUIDV4,
-        defaultValue: DataTypes.UUIDV4,
-        allowNull: false,
+      allowNull: false,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
     name: {
@@ -28,19 +32,27 @@ Menu.init(
       allowNull: false,
     },
     price: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.FLOAT,
       allowNull: false,
     },
     image: {
       type: DataTypes.STRING,
       allowNull: false,
     },
+    description: {
+      type: DataTypes.TEXT("long"),
+      allowNull: false,
+    },
+    type: {
+      type: DataTypes.ENUM("new", "sale"),
+      allowNull: false,
+    },
   },
   {
     sequelize,
-    tableName: "menu",
+    tableName: "book",
     timestamps: false,
   },
 );
 
-export default Menu;
+export default Book;
