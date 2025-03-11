@@ -1,4 +1,4 @@
-# Nodejs + Express + MongoDB + Typescript
+# Nodejs + Express + MySQL + Typescript
 
 ## Getting Started
 
