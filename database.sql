@@ -25,6 +25,10 @@ CREATE TABLE user (
     PRIMARY KEY (id)
 );
 
+INSERT INTO user (id, username, password, role)
+VALUES (UUID(), 'admin', '$2a$10$pQ9Al2UHeoHbISdQZovXs.oGkgoNJi/acT9HLDsW3jR3Aojv1BlDS', 'admin');
+
+
 
 CREATE TABLE cart (
     id CHAR(36) NOT NULL DEFAULT (UUID()),
