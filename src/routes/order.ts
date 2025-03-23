@@ -7,14 +7,15 @@ import {
   getOrderPagination,
   updateOrder,
 } from "../controllers/order";
+import authMiddleware from "../middlewares/auth";
 
 const router = express.Router();
 
-router.get("/get-all", getOrders);
-router.get("/pagination", getOrderPagination);
-router.get("/get-by-id/:id", getOrderById);
-router.post("/", createOrder);
-router.delete("/:id", deleteOrder);
-router.put("/:id", updateOrder);
+router.get("/get-all", authMiddleware, getOrders);
+router.get("/pagination", authMiddleware, getOrderPagination);
+router.get("/get-by-id/:id", authMiddleware, getOrderById);
+router.post("/", authMiddleware, createOrder);
+router.delete("/:id", authMiddleware, deleteOrder);
+router.put("/:id", authMiddleware, updateOrder);
 
 export default router;

@@ -9,6 +9,7 @@ interface OrderInstance {
   address: string;
   note: string;
   status: "pending" | "completed" | "canceled" | "processing";
+  quantity: number;
 }
 
 class Order extends Model<OrderInstance> implements OrderInstance {
@@ -19,6 +20,7 @@ class Order extends Model<OrderInstance> implements OrderInstance {
   public address!: string;
   public note!: string;
   public status!: "pending" | "completed" | "canceled" | "processing";
+  public quantity!: number;
 }
 
 Order.init(
@@ -53,12 +55,17 @@ Order.init(
       type: DataTypes.ENUM("pending", "completed", "canceled", "processing"),
       allowNull: false,
     },
+    quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+    },
   },
   {
     sequelize,
     tableName: "order",
     timestamps: false,
-  },
+  }
 );
 
 export default Order;

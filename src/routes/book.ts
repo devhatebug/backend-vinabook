@@ -7,13 +7,14 @@ import {
   updateBook,
 } from "../controllers/book";
 import upload from "../config/multer";
+import authMiddleware from "../middlewares/auth";
 
 const router = express.Router();
 
 router.get("/get-all", getBooks);
 router.get("/pagination", getBookPagination);
-router.post("/", upload.single("image"), createBook);
-router.delete("/:id", deleteBook);
-router.put("/:id", upload.single("image"), updateBook);
+router.post("/", upload.single("image"), authMiddleware, createBook);
+router.delete("/:id", authMiddleware, deleteBook);
+router.put("/:id", upload.single("image"), authMiddleware, updateBook);
 
 export default router;

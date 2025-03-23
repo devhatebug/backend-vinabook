@@ -2,6 +2,7 @@ import Book from "../models/book";
 import { Request, Response } from "express";
 import imagekit from "../config/imagekit";
 import { v4 as uuidv4 } from "uuid";
+import User from "../models/user";
 
 export const getBooks = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -16,7 +17,7 @@ export const getBooks = async (req: Request, res: Response): Promise<void> => {
 
 export const getBookPagination = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
     const { page, limit } = req.query;
@@ -35,9 +36,26 @@ export const getBookPagination = async (
 
 export const createBook = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(403).json({ message: "Vui lòng đăng nhập!" });
+      return;
+    }
+
+    const { userId } = req.user;
+
+    const checkUser = await User.findOne({ where: { id: userId } });
+    if (!checkUser) {
+      res.status(404).json({ message: "Vui lòng thử lại!" });
+      return;
+    }
+    if (checkUser.role !== "admin") {
+      res.status(403).json({ message: "Bạn không có quyền truy cập" });
+      return;
+    }
+
     const { name, price, description } = req.body;
     const imageFile = req.file;
 
@@ -74,9 +92,24 @@ export const createBook = async (
 
 export const updateBook = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(403).json({ message: "Vui lòng đăng nhập!" });
+      return;
+    }
+    const { userId } = req.user;
+    const checkUser = await User.findOne({ where: { id: userId } });
+    if (!checkUser) {
+      res.status(404).json({ message: "Vui lòng thử lại!" });
+      return;
+    }
+    if (checkUser.role !== "admin") {
+      res.status(403).json({ message: "Bạn không có quyền truy cập" });
+      return;
+    }
+
     const { id } = req.params;
     const { name, price, description, type } = req.body;
     const imageFile = req.file;
@@ -119,9 +152,24 @@ export const updateBook = async (
 
 export const deleteBook = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(403).json({ message: "Vui lòng đăng nhập!" });
+      return;
+    }
+    const { userId } = req.user;
+    const checkUser = await User.findOne({ where: { id: userId } });
+    if (!checkUser) {
+      res.status(404).json({ message: "Vui lòng thử lại!" });
+      return;
+    }
+    if (checkUser.role !== "admin") {
+      res.status(403).json({ message: "Bạn không có quyền truy cập" });
+      return;
+    }
+
     const { id } = req.params;
     const book = await Book.findByPk(id);
     if (!book) {

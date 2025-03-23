@@ -2,9 +2,25 @@ import Order from "../models/order";
 import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import Book from "../models/book";
+import User from "../models/user";
 
 export const getOrders = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: "Vui lòng đăng nhập" });
+      return;
+    }
+    const { userId } = req.user;
+    const user = await User.findByPk(userId);
+    if (!user) {
+      res.status(404).json({ message: "Không tìm thấy người dùng" });
+      return;
+    }
+    if (user.role !== "admin") {
+      res.status(403).json({ message: "Bạn không có quyền truy cập" });
+      return;
+    }
+
     const orders = await Order.findAll();
     res.json(orders);
     return;
@@ -16,9 +32,24 @@ export const getOrders = async (req: Request, res: Response): Promise<void> => {
 
 export const getOrderPagination = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: "Vui lòng đăng nhập" });
+      return;
+    }
+    const { userId } = req.user;
+    const user = await User.findByPk(userId);
+    if (!user) {
+      res.status(404).json({ message: "Không tìm thấy người dùng" });
+      return;
+    }
+    if (user.role !== "admin") {
+      res.status(403).json({ message: "Bạn không có quyền truy cập" });
+      return;
+    }
+
     const { page, limit } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
     const orders = await Order.findAndCountAll({
@@ -35,9 +66,24 @@ export const getOrderPagination = async (
 
 export const createOrder = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: "Vui lòng đăng nhập" });
+      return;
+    }
+    const { userId } = req.user;
+    const user = await User.findByPk(userId);
+    if (!user) {
+      res.status(404).json({ message: "Không tìm thấy người dùng" });
+      return;
+    }
+    if (user.role !== "admin") {
+      res.status(403).json({ message: "Bạn không có quyền truy cập" });
+      return;
+    }
+
     const { idBook, nameClient, phoneNumber, address, note } = req.body;
 
     if (!idBook || !nameClient || !phoneNumber || !address) {
@@ -60,6 +106,7 @@ export const createOrder = async (
       address,
       note,
       status: "pending",
+      quantity: 1,
     });
 
     res.json(newOrder);
@@ -72,9 +119,24 @@ export const createOrder = async (
 
 export const updateOrder = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: "Vui lòng đăng nhập" });
+      return;
+    }
+    const { userId } = req.user;
+    const user = await User.findByPk(userId);
+    if (!user) {
+      res.status(404).json({ message: "Không tìm thấy người dùng" });
+      return;
+    }
+    if (user.role !== "admin") {
+      res.status(403).json({ message: "Bạn không có quyền truy cập" });
+      return;
+    }
+
     const { id } = req.params;
     const { status } = req.body;
 
@@ -101,9 +163,24 @@ export const updateOrder = async (
 
 export const deleteOrder = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: "Vui lòng đăng nhập" });
+      return;
+    }
+    const { userId } = req.user;
+    const user = await User.findByPk(userId);
+    if (!user) {
+      res.status(404).json({ message: "Không tìm thấy người dùng" });
+      return;
+    }
+    if (user.role !== "admin") {
+      res.status(403).json({ message: "Bạn không có quyền truy cập" });
+      return;
+    }
+
     const { id } = req.params;
     const order = await Order.findByPk(id);
 
@@ -123,9 +200,24 @@ export const deleteOrder = async (
 
 export const getOrderById = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: "Vui lòng đăng nhập" });
+      return;
+    }
+    const { userId } = req.user;
+    const user = await User.findByPk(userId);
+    if (!user) {
+      res.status(404).json({ message: "Không tìm thấy người dùng" });
+      return;
+    }
+    if (user.role !== "admin") {
+      res.status(403).json({ message: "Bạn không có quyền truy cập" });
+      return;
+    }
+
     const { id } = req.params;
     const order = await Order.findByPk(id);
 
