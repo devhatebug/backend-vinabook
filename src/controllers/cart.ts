@@ -4,6 +4,7 @@ import User from "../models/user";
 import Book from "../models/book";
 import { v4 as uuidv4 } from "uuid";
 import Order from "../models/order";
+import OrderDetails from "../models/order-details";
 
 export const getCart = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -238,7 +239,25 @@ export const payCart = async (req: Request, res: Response): Promise<void> => {
       quantity: item.quantity,
     }));
 
-    await Order.bulkCreate(orderItems);
+    orderItems.map(async (item) => {
+        await Order.create({
+            id: item.id,
+            nameClient: item.nameClient,
+            phoneNumber: item.phoneNumber,
+            address: item.address,
+            note: item.note,
+            status: item.status,
+        });
+
+        const book = await Book.findByPk(item.idBook);
+        await OrderDetails.create({
+            id: uuidv4(),
+            orderId: item.id,
+            bookId: item.idBook,
+            quantity: item.quantity,
+            price: book?.price || 0,
+        });
+    })
 
     await Cart.destroy({
       where: { id: cartItemIds, userId },

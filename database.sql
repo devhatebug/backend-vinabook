@@ -8,14 +8,11 @@ CREATE TABLE book (
 );
 CREATE TABLE `order` (
     id CHAR(36) NOT NULL PRIMARY KEY,
-    idBook CHAR(36) NOT NULL,
     nameClient VARCHAR(255) NOT NULL,
     phoneNumber VARCHAR(20) NOT NULL,
     address TEXT NOT NULL,
     note TEXT NULL,
-    status ENUM('pending', 'completed', 'canceled', 'processing') NOT NULL,
-    quantity INT NOT NULL DEFAULT 1,
-    FOREIGN KEY (idBook) REFERENCES book(id) ON DELETE CASCADE
+    status ENUM('pending', 'completed', 'canceled', 'processing') NOT NULL
 );
 CREATE TABLE user (
     id CHAR(36) NOT NULL DEFAULT (UUID()),
@@ -28,7 +25,16 @@ CREATE TABLE user (
 INSERT INTO user (id, username, password, role)
 VALUES (UUID(), 'admin', '$2a$10$pQ9Al2UHeoHbISdQZovXs.oGkgoNJi/acT9HLDsW3jR3Aojv1BlDS', 'admin');
 
-
+CREATE TABLE order_details (
+    id CHAR(36) NOT NULL DEFAULT (UUID()),
+    orderId CHAR(36) NOT NULL,
+    bookId CHAR(36) NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    price FLOAT NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (orderId) REFERENCES `order`(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (bookId) REFERENCES book(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
 
 CREATE TABLE cart (
     id CHAR(36) NOT NULL DEFAULT (UUID()),
