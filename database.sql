@@ -4,11 +4,13 @@ CREATE TABLE book (
     price FLOAT NOT NULL,
     image VARCHAR(255) NOT NULL,
     description LONGTEXT NOT NULL,
-    type ENUM('new', 'sale') DEFAULT 'new' label VARCHAR(255),
+    type ENUM('new', 'sale') DEFAULT 'new',
+    label VARCHAR(255)
 );
 
 CREATE TABLE `order` (
     id CHAR(36) NOT NULL PRIMARY KEY,
+    userId CHAR(36) NOT NULL,
     nameClient VARCHAR(255) NOT NULL,
     phoneNumber VARCHAR(20) NOT NULL,
     address TEXT NOT NULL,
@@ -19,6 +21,8 @@ CREATE TABLE `order` (
         'canceled',
         'processing'
     ) NOT NULL
+    DEFAULT 'pending',
+    FOREIGN KEY (userId) REFERENCES `user` (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE user (
@@ -26,19 +30,19 @@ CREATE TABLE user (
     email VARCHAR(255) NOT NULL,
     username VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'user') NOT NULL,
+    role ENUM('admin', 'user') NOT NULL DEFAULT 'user',
     PRIMARY KEY (id)
 );
 
-INSERT INTO
-    user (id, username, password, role)
+INSERT INTO user (id, email, username, password, role)
 VALUES (
-        UUID(),
-        'admin@gmail.com',
-        'admin',
-        '$2a$10$pQ9Al2UHeoHbISdQZovXs.oGkgoNJi/acT9HLDsW3jR3Aojv1BlDS',
-        'admin'
-    );
+    UUID(),
+    'admin@gmail.com',
+    'admin',
+    '$2a$10$pQ9Al2UHeoHbISdQZovXs.oGkgoNJi/acT9HLDsW3jR3Aojv1BlDS',
+    'admin'
+);
+
 
 CREATE TABLE order_details (
     id CHAR(36) NOT NULL DEFAULT(UUID()),
