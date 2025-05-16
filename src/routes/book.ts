@@ -5,6 +5,7 @@ import {
   createBook,
   deleteBook,
   updateBook,
+  getAllLabels
 } from "../controllers/book";
 import upload from "../config/multer";
 import authMiddleware from "../middlewares/auth";
@@ -16,5 +17,7 @@ router.get("/pagination", getBookPagination);
 router.post("/", upload.single("image"), authMiddleware, createBook);
 router.delete("/:id", authMiddleware, deleteBook);
 router.put("/:id", upload.single("image"), authMiddleware, updateBook);
+router.get("/get-labels", getAllLabels);
+
 
 export default router;

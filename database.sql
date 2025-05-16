@@ -5,6 +5,7 @@ CREATE TABLE book (
     image VARCHAR(255) NOT NULL,
     description LONGTEXT NOT NULL,
     type ENUM('new', 'sale') DEFAULT 'new'
+    label VARCHAR(255),
 );
 CREATE TABLE `order` (
     id CHAR(36) NOT NULL PRIMARY KEY,

@@ -1,5 +1,5 @@
-import { DataTypes, Model } from "sequelize";
-import sequelize from "../config/database";
+import { DataTypes, Model } from 'sequelize';
+import sequelize from '../config/database';
 
 interface BookInstance {
   id: string;
@@ -7,7 +7,8 @@ interface BookInstance {
   price: number;
   image: string;
   description: string;
-  type: "new" | "sale";
+  type: 'new' | 'sale';
+  label: string;
 }
 
 class Book extends Model<BookInstance> implements BookInstance {
@@ -16,7 +17,8 @@ class Book extends Model<BookInstance> implements BookInstance {
   public price!: number;
   public image!: string;
   public description!: string;
-  public type!: "new" | "sale";
+  public type!: 'new' | 'sale';
+  public label!: string;
 }
 
 Book.init(
@@ -40,19 +42,23 @@ Book.init(
       allowNull: false,
     },
     description: {
-      type: DataTypes.TEXT("long"),
+      type: DataTypes.TEXT('long'),
       allowNull: false,
     },
     type: {
-      type: DataTypes.ENUM("new", "sale"),
+      type: DataTypes.ENUM('new', 'sale'),
+      allowNull: false,
+    },
+    label: {
+      type: DataTypes.STRING,
       allowNull: false,
     },
   },
   {
     sequelize,
-    tableName: "book",
+    tableName: 'book',
     timestamps: false,
-  },
+  }
 );
 
 export default Book;
