@@ -232,6 +232,21 @@ export const payCart = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
+        const bookIds = cartItems.map((item) => item.bookId);
+        const books = await Book.findAll({
+            where: { id: bookIds },
+        });
+
+        for (const item of cartItems) {
+            const book = books.find((b) => b.id === item.bookId);
+            if (book && typeof book.quantity === 'number' && book.quantity < item.quantity) {
+                res.status(400).json({
+                    message: `Số lượng sách "${book.name}" không đủ trong kho`,
+                });
+                return;
+            }
+        }
+
         await Cart.update(
             { status: 'completed' },
             { where: { id: cartItemIds, userId } }
@@ -260,6 +275,13 @@ export const payCart = async (req: Request, res: Response): Promise<void> => {
             });
 
             const book = await Book.findByPk(item.idBook);
+
+            if (book && typeof book.quantity === 'number') {
+                await book.decrement('quantity', {
+                    by: item.quantity,
+                });
+            }
+
             await OrderDetails.create({
                 id: uuidv4(),
                 orderId: item.id,
@@ -340,6 +362,7 @@ Chúng tôi sẽ liên hệ với bạn để xác nhận đơn hàng trong th�
         );
 
         res.status(200).json({
+            status: 'success',
             message: 'Đặt hàng thành công',
             orderItems,
         });

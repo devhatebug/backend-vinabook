@@ -7,6 +7,7 @@ import orderRouter from "./routes/order";
 import authRouter from "./routes/auth";
 import userRouter from "./routes/user";
 import cartRouter from "./routes/cart";
+import labelRouter from "./routes/label";
 
 const app = express();
 const PORT = config.port;
@@ -32,6 +33,7 @@ app.use("/api/v1/order", orderRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/cart", cartRouter);
+app.use("/api/v1/label", labelRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

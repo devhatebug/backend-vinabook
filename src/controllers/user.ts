@@ -193,19 +193,19 @@ export const updateUser = async (
             return;
         }
         const { userId } = req.user;
+        const { id } = req.params;
+        const { username, role, password, email } = req.body;
+
         const checkUser = await User.findOne({ where: { id: userId } });
         if (!checkUser) {
             res.status(404).json({ message: 'Vui lòng thử lại!' });
             return;
         }
 
-        if (checkUser.role !== 'admin') {
+        if (checkUser.role !== 'admin' && checkUser.id !== id) {
             res.status(403).json({ message: 'Bạn không có quyền truy cập' });
             return;
         }
-
-        const { id } = req.params;
-        const { username, role } = req.body;
 
         const user = await User.findOne({ where: { id } });
 
@@ -220,7 +220,15 @@ export const updateUser = async (
             return;
         }
 
-        await User.update({ username, role }, { where: { id } });
+        let hashedPassword;
+        if (password) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        }
+
+        await User.update(
+            { username, role, password: hashedPassword, email },
+            { where: { id } }
+        );
 
         res.status(200).json({
             message: 'Cập nhật người dùng thành công!',

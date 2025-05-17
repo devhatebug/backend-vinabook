@@ -5,7 +5,9 @@ CREATE TABLE book (
     image VARCHAR(255) NOT NULL,
     description LONGTEXT NOT NULL,
     type ENUM('new', 'sale') DEFAULT 'new',
-    label VARCHAR(255)
+    labelId CHAR(36) NOT NULL,
+    quantity INT DEFAULT 0,
+    FOREIGN KEY (labelId) REFERENCES `label` (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE `order` (
@@ -20,8 +22,9 @@ CREATE TABLE `order` (
         'completed',
         'canceled',
         'processing'
-    ) NOT NULL
-    DEFAULT 'pending',
+    ) NOT NULL DEFAULT 'pending',
+    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (userId) REFERENCES `user` (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -34,15 +37,21 @@ CREATE TABLE user (
     PRIMARY KEY (id)
 );
 
-INSERT INTO user (id, email, username, password, role)
+INSERT INTO
+    user (
+        id,
+        email,
+        username,
+        password,
+        role
+    )
 VALUES (
-    UUID(),
-    'admin@gmail.com',
-    'admin',
-    '$2a$10$pQ9Al2UHeoHbISdQZovXs.oGkgoNJi/acT9HLDsW3jR3Aojv1BlDS',
-    'admin'
-);
-
+        UUID(),
+        'admin@gmail.com',
+        'admin',
+        '$2a$10$pQ9Al2UHeoHbISdQZovXs.oGkgoNJi/acT9HLDsW3jR3Aojv1BlDS',
+        'admin'
+    );
 
 CREATE TABLE order_details (
     id CHAR(36) NOT NULL DEFAULT(UUID()),
@@ -64,4 +73,12 @@ CREATE TABLE cart (
     PRIMARY KEY (id),
     FOREIGN KEY (userId) REFERENCES user (id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (bookId) REFERENCES book (id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE `label` (
+    id CHAR(36) NOT NULL DEFAULT(UUID()),
+    name VARCHAR(255) NOT NULL,
+    value VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    PRIMARY KEY (id)
 );

@@ -9,6 +9,8 @@ interface OrderInstance {
     address: string;
     note: string;
     status: 'pending' | 'completed' | 'canceled' | 'processing';
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 class Order extends Model<OrderInstance> implements OrderInstance {
@@ -19,6 +21,8 @@ class Order extends Model<OrderInstance> implements OrderInstance {
     public address!: string;
     public note!: string;
     public status!: 'pending' | 'completed' | 'canceled' | 'processing';
+    public createdAt!: Date;
+    public updatedAt!: Date;
 }
 
 Order.init(
@@ -58,11 +62,21 @@ Order.init(
             ),
             allowNull: false,
         },
+        createdAt: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: DataTypes.NOW,
+        },
+        updatedAt: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: DataTypes.NOW,
+        }
     },
     {
         sequelize,
         tableName: 'order',
-        timestamps: false,
+        timestamps: true,
     }
 );
 

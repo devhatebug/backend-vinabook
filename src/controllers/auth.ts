@@ -18,11 +18,28 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
+        // Kiểm tra định dạng tên đăng nhập
+        const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+        if (!usernameRegex.test(username)) {
+            res.status(400).json({
+                message: 'Tên đăng nhập không hợp lệ! (3-20 ký tự, chỉ chứa chữ cái, số và dấu gạch dưới)',
+            });
+            return;
+        }
+
         // Kiểm tra định dạng email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             res.status(400).json({
                 message: 'Email không hợp lệ!',
+            });
+            return;
+        }
+
+        // Kiểm tra độ dài mật khẩu
+        if (password.length < 8) {
+            res.status(400).json({
+                message: 'Mật khẩu phải có ít nhất 8 ký tự!',
             });
             return;
         }

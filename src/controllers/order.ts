@@ -5,6 +5,8 @@ import Book from '../models/book';
 import User from '../models/user';
 import OrderDetails from '../models/order-details';
 import { mailService } from '../config/mail.config';
+import { Op } from 'sequelize';
+import Label from '../models/label';
 
 export const getOrders = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -128,6 +130,8 @@ export const createOrder = async (
             address,
             note,
             status: 'pending',
+            createdAt: new Date(),
+            updatedAt: new Date(),
         });
 
         const newOrderDetails = await OrderDetails.create({
@@ -404,6 +408,207 @@ export const getOrderById = async (
         return;
     } catch (error) {
         res.status(500).json({ message: 'Lỗi khi lấy thông tin', error });
+        return;
+    }
+};
+
+export const staticOrderOverTime = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: 'Vui lòng đăng nhập' });
+            return;
+        }
+        const { userId } = req.user;
+        const user = await User.findByPk(userId);
+        if (!user) {
+            res.status(404).json({ message: 'Không tìm thấy người dùng' });
+            return;
+        }
+        if (user.role !== 'admin') {
+            res.status(403).json({ message: 'Bạn không có quyền truy cập' });
+            return;
+        }
+
+        const { startDate: startDateStr, endDate: endDateStr } = req.query;
+
+        if (!startDateStr || !endDateStr) {
+            res.status(400).json({ message: 'Thiếu startDate hoặc endDate' });
+            return;
+        }
+
+        const startDate = new Date(startDateStr as string);
+        const endDate = new Date(endDateStr as string);
+
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
+
+        const orders = await Order.findAll({
+            where: {
+                createdAt: {
+                    [Op.gte]: startDate,
+                    [Op.lte]: endDate,
+                },
+            },
+            order: [['createdAt', 'ASC']],
+        });
+
+        const ordersCountByDate: { [key: string]: number } = {};
+
+        orders.forEach((order) => {
+            const dateStr = new Date(order.createdAt).toLocaleDateString(
+                'vi-VN',
+                {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                }
+            );
+
+            ordersCountByDate[dateStr] = (ordersCountByDate[dateStr] || 0) + 1;
+        });
+
+        const dateArray: Date[] = [];
+        const currentDate = new Date(startDate);
+
+        while (currentDate <= endDate) {
+            dateArray.push(new Date(currentDate));
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        const data = dateArray.map((date) => {
+            const dateStr = date.toLocaleDateString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+            });
+
+            return {
+                time: dateStr,
+                value: ordersCountByDate[dateStr] || 0,
+            };
+        });
+
+        res.json({
+            message: 'Thống kê đơn hàng thành công',
+            staticData: {
+                totalOrders: orders.length,
+                data: data,
+            },
+        });
+        return;
+    } catch (error) {
+        console.error('Lỗi trong staticOrderOverTime:', error);
+        res.status(500).json({
+            message: 'Lỗi khi lấy thông tin',
+            error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return;
+    }
+};
+
+export const getTop10BestSellingBooks = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: 'Vui lòng đăng nhập' });
+            return;
+        }
+        const { userId } = req.user;
+        const user = await User.findByPk(userId);
+        if (!user) {
+            res.status(404).json({ message: 'Không tìm thấy người dùng' });
+            return;
+        }
+        if (user.role !== 'admin') {
+            res.status(403).json({ message: 'Bạn không có quyền truy cập' });
+            return;
+        }
+
+        const { startDate: startDateStr, endDate: endDateStr } = req.query;
+
+        if (!startDateStr || !endDateStr) {
+            res.status(400).json({ message: 'Thiếu startDate hoặc endDate' });
+            return;
+        }
+
+        const startDate = new Date(startDateStr as string);
+        const endDate = new Date(endDateStr as string);
+
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
+
+        const orders = await Order.findAll({
+            where: {
+                createdAt: {
+                    [Op.gte]: startDate,
+                    [Op.lte]: endDate,
+                },
+            },
+            order: [['createdAt', 'ASC']],
+        });
+
+        const orderIds = orders.map((order) => order.id);
+
+        const orderDetails = await OrderDetails.findAll({
+            where: { orderId: orderIds },
+        });
+
+        const bookIds = orderDetails.map((detail) => detail.bookId);
+
+        const books = await Book.findAll({
+            where: { id: bookIds },
+        });
+
+        const salesCount: { [key: string]: number } = {};
+
+        orderDetails.forEach((detail) => {
+            salesCount[detail.bookId] =
+                (salesCount[detail.bookId] || 0) + detail.quantity;
+        });
+
+        const sortedBooks = Object.entries(salesCount)
+            .map(([bookId, quantity]) => ({ bookId, quantity }))
+            .sort((a, b) => b.quantity - a.quantity)
+            .slice(0, 10);
+
+        const topBooks = sortedBooks.map(async (item) => {
+            console.log('item', item);
+            const book = books.find((b) => b.id === item.bookId);
+            const labels = await Label.findAll();
+            return {
+                bookId: item.bookId,
+                quantity: item.quantity,
+                bookName: book ? book.name : 'Không tìm thấy sách',
+                price: book ? book.price : 0,
+                label: labels
+                    .map((label) => {
+                        if (book && book.labelId === label.id) {
+                            return label.name;
+                        }
+                        return '';
+                    })
+                    .filter((label) => label !== '')
+                    .join(', '),
+            };
+        });
+        const topBooksResolved = await Promise.all(topBooks);
+        topBooksResolved.sort((a, b) => b.quantity - a.quantity);
+        res.json({
+            message: 'Thống kê quyển sách bán chạy thành công',
+            topBooks: topBooksResolved,
+        });
+        return;
+    } catch (error) {
+        console.error('Lỗi trong getTop10BestSellingBooks:', error);
+        res.status(500).json({
+            message: 'Lỗi khi lấy thông tin',
+            error: error instanceof Error ? error.message : 'Unknown error',
+        });
         return;
     }
 };

@@ -3,11 +3,24 @@ import { Request, Response } from 'express';
 import imagekit from '../config/imagekit';
 import { v4 as uuidv4 } from 'uuid';
 import User from '../models/user';
+import Label from '../models/label';
 
 export const getBooks = async (req: Request, res: Response): Promise<void> => {
     try {
         const books = await Book.findAll();
-        res.json(books);
+        const labelIds = books.map((book) => book.labelId);
+        const labels = await Label.findAll({
+            where: {
+                id: labelIds,
+            },
+        });
+        res.json({
+            message: 'Lấy danh sách sách thành công',
+            data: books.map((book) => ({
+                ...book.toJSON(),
+                label: labels.find((label) => label.id === book.labelId)?.name,
+            })),
+        });
         return;
     } catch (error) {
         res.status(500).json({
@@ -29,7 +42,22 @@ export const getBookPagination = async (
             limit: Number(limit),
             offset,
         });
-        res.json(books);
+        const labelIds = books.rows.map((book) => book.labelId);
+        const labels = await Label.findAll({
+            where: {
+                id: labelIds,
+            },
+        });
+        res.json({
+            message: 'Lấy danh sách sách thành công',
+            data: books.rows.map((book) => ({
+                ...book.toJSON(),
+                label: labels.find((label) => label.id === book.labelId)?.name,
+            })),
+            total: books.count,
+            totalPages: Math.ceil(books.count / Number(limit)),
+            currentPage: Number(page),
+        });
         return;
     } catch (error) {
         res.status(500).json({
@@ -66,10 +94,17 @@ export const createBook = async (
             return;
         }
 
-        const { name, price, description, label } = req.body;
+        const { name, price, description, labelId, quantity } = req.body;
         const imageFile = req.file;
 
-        if (!name || !price || !description || !imageFile || !label) {
+        if (
+            !name ||
+            !price ||
+            !description ||
+            !imageFile ||
+            !labelId ||
+            !quantity
+        ) {
             res.status(400).json({
                 message: 'Vui lòng nhập đầy đủ thông tin!',
             });
@@ -89,7 +124,8 @@ export const createBook = async (
             description,
             image: uploadedImage.url,
             type: 'new',
-            label,
+            labelId,
+            quantity: Number(quantity),
         });
 
         res.status(201).json({
@@ -128,10 +164,10 @@ export const updateBook = async (
         }
 
         const { id } = req.params;
-        const { name, price, description, type, label } = req.body;
+        const { name, price, description, type, labelId, quantity } = req.body;
         const imageFile = req.file;
 
-        if (!name || !price || !description || !type || !label) {
+        if (!name || !price || !description || !type || !labelId || !quantity) {
             res.status(400).json({
                 message: 'Vui lòng nhập đầy đủ thông tin!',
             });
@@ -162,7 +198,8 @@ export const updateBook = async (
             image:
                 uploadedImage.url.length > 0 ? uploadedImage.url : book.image,
             type,
-            label,
+            labelId,
+            quantity: Number(quantity),
         });
 
         res.json({ message: 'Cập nhật sách thành công!' });
@@ -224,10 +261,16 @@ export const getAllLabels = async (
 ): Promise<void> => {
     try {
         const books = await Book.findAll();
-        const labels = books.map((book) => book.label);
+        const labels = books.map((book) => book.labelId);
+        const dataLabels = await Label.findAll({
+            where: {
+                id: labels,
+            },
+        });
+        const names = dataLabels.map((label) => label.name);
         res.json({
             message: 'Lấy danh sách nhãn thành công',
-            data: labels,
+            data: names,
         });
     } catch (error) {
         throw new Error('Lỗi khi lấy danh sách nhãn');
