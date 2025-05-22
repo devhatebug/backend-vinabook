@@ -91,22 +91,21 @@ export const createOrder = async (
 ): Promise<void> => {
     try {
         if (!req.user) {
-            res.status(401).json({ message: 'Vui lòng đăng nhập' });
+            res.status(401).json({ message: 'Vui lòng đăng nhập!' });
             return;
         }
         const { userId } = req.user;
-        const user = await User.findByPk(userId);
+
+        const user = await User.findOne({
+            where: { id: userId },
+        });
+
         if (!user) {
             res.status(404).json({ message: 'Không tìm thấy người dùng' });
             return;
         }
-        if (user.role !== 'admin') {
-            res.status(403).json({ message: 'Bạn không có quyền truy cập' });
-            return;
-        }
 
-        const { idBook, nameClient, phoneNumber, address, note, idUser } =
-            req.body;
+        const { idBook, nameClient, phoneNumber, address, note, quantity = 1 } = req.body;
 
         if (!idBook || !nameClient || !phoneNumber || !address) {
             res.status(400).json({
@@ -122,37 +121,101 @@ export const createOrder = async (
             return;
         }
 
+        if (typeof book.quantity === 'number' && book.quantity < quantity) {
+            res.status(400).json({
+                message: `Số lượng sách "${book.name}" không đủ trong kho`,
+            });
+            return;
+        }
+
         const newOrder = await Order.create({
             id: uuidv4(),
-            userId: idUser,
+            userId,
             nameClient,
             phoneNumber,
             address,
             note,
             status: 'pending',
-            createdAt: new Date(),
-            updatedAt: new Date(),
         });
+
+        if (book && typeof book.quantity === 'number') {
+            await book.decrement('quantity', {
+                by: quantity,
+            });
+        }
 
         const newOrderDetails = await OrderDetails.create({
             id: uuidv4(),
             orderId: newOrder.id,
             bookId: idBook,
-            quantity: 1,
+            quantity,
             price: book.price,
         });
 
-        res.json({
-            ...newOrder,
-            idBook: idBook,
-            quantity: 1,
-            price: book.price,
-            userId: idUser,
+        async function createSuccessEmail(): Promise<{
+            subject: string;
+            text: string;
+            html: string;
+        }> {
+            return {
+                subject: 'Cảm ơn bạn đã đặt hàng tại VinaBook',
+                text: `Cảm ơn bạn đã đặt hàng tại VinaBook!
+
+Đơn hàng của bạn đã được ghi nhận với các mục sau:
+1. Sách: ${book?.name} - Số lượng: ${quantity}
+
+Thông tin khách hàng:
+- Tên: ${nameClient}
+- Địa chỉ: ${address}
+- Số điện thoại: ${phoneNumber}
+
+Chúng tôi sẽ liên hệ với bạn để xác nhận đơn hàng trong thời gian sớm nhất.`,
+                html: `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+  <h2>VinaBook - Xác nhận đơn hàng</h2>
+  <p>Xin chào <b>${nameClient}</b>,</p>
+  <p>Cảm ơn bạn đã đặt hàng tại <b>VinaBook</b>. Đơn hàng của bạn bao gồm:</p>
+  <ul>
+    <li>Sách: <b>${book?.name}</b> - Số lượng: <b>${quantity}</b></li>
+  </ul>
+  <p><b>Thông tin giao hàng:</b></p>
+  <ul>
+    <li>Địa chỉ: ${address}</li>
+    <li>Số điện thoại: ${phoneNumber}</li>
+  </ul>
+  <p>Chúng tôi sẽ liên hệ sớm để xác nhận và tiến hành giao hàng.</p>
+  <p>Trân trọng,</p>
+  <p>Đội ngũ VinaBook</p>
+</div>`,
+            };
+        }
+
+        const emailContent = await createSuccessEmail();
+        await mailService.sendEmail(
+            user.email,
+            emailContent.subject,
+            emailContent.text,
+            emailContent.html
+        );
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Đặt hàng thành công',
+            orderItem: {
+                id: newOrder.id,
+                idBook: idBook,
+                nameClient,
+                phoneNumber,
+                address,
+                note,
+                status: 'pending',
+                quantity,
+                price: book.price,
+                userId,
+            },
         });
-        return;
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi khi tạo đơn hàng', error });
-        return;
+        res.status(500).json({ message: 'Lỗi server' });
     }
 };
 
