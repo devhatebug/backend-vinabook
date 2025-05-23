@@ -6,6 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 import Order from '../models/order';
 import OrderDetails from '../models/order-details';
 import { mailService } from '../config/mail.config';
+import PointPurchase from '../models/point-purchase';
+import { caculatorLevelUser } from '../utils/caculator-level-user';
 
 export const getCart = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -239,7 +241,11 @@ export const payCart = async (req: Request, res: Response): Promise<void> => {
 
         for (const item of cartItems) {
             const book = books.find((b) => b.id === item.bookId);
-            if (book && typeof book.quantity === 'number' && book.quantity < item.quantity) {
+            if (
+                book &&
+                typeof book.quantity === 'number' &&
+                book.quantity < item.quantity
+            ) {
                 res.status(400).json({
                     message: `Số lượng sách "${book.name}" không đủ trong kho`,
                 });
@@ -262,6 +268,30 @@ export const payCart = async (req: Request, res: Response): Promise<void> => {
             status: 'pending' as 'pending',
             quantity: item.quantity,
         }));
+
+        const pointPurchase = await PointPurchase.findOne({
+            where: { userId },
+        });
+        if (pointPurchase) {
+            cartItems.map(async (item) => {
+                await caculatorLevelUser(
+                    pointPurchase.point + item.quantity,
+                    userId
+                );
+                await pointPurchase.update({
+                    point: pointPurchase.point + item.quantity,
+                });
+            });
+        } else {
+            cartItems.map(async (item) => {
+                await PointPurchase.create({
+                    id: uuidv4(),
+                    userId,
+                    point: item.quantity,
+                });
+                await caculatorLevelUser(item.quantity, userId);
+            });
+        }
 
         orderItems.map(async (item) => {
             await Order.create({
@@ -316,7 +346,7 @@ export const payCart = async (req: Request, res: Response): Promise<void> => {
 
             const orderListHtml = orderItems
                 .map((item, idx) => {
-                    const book = books.find(b => b.id === item.bookId);
+                    const book = books.find((b) => b.id === item.bookId);
                     const bookName = book ? book.name : item.bookId;
                     return `<li>Sách: <b>${bookName}</b> - Số lượng: <b>${item.quantity}</b></li>`;
                 })

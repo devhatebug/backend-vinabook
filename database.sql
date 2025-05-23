@@ -46,7 +46,7 @@ INSERT INTO
         role
     )
 VALUES (
-        UUID(),
+        '3f73a9e7-1a6c-4f5e-9025-7787a1ef7c9e',
         'admin@gmail.com',
         'admin',
         '$2a$10$pQ9Al2UHeoHbISdQZovXs.oGkgoNJi/acT9HLDsW3jR3Aojv1BlDS',
@@ -81,4 +81,42 @@ CREATE TABLE `label` (
     value VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     PRIMARY KEY (id)
+);
+
+CREATE TABLE LEVEL_USER (
+    id CHAR(36) NOT NULL DEFAULT(UUID()),
+    userId CHAR(36) NOT NULL,
+    level INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    FOREIGN KEY (userId) REFERENCES user (id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE POINT_PURCHASE (
+    id CHAR(36) NOT NULL DEFAULT(UUID()),
+    userId CHAR(36) NOT NULL,
+    point INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    FOREIGN KEY (userId) REFERENCES user (id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+INSERT INTO LABEL_USER (
+    id,
+    userId,
+    level
+)
+VALUES (
+    UUID(),
+    '3f73a9e7-1a6c-4f5e-9025-7787a1ef7c9e',
+    0
+);
+
+INSERT INTO POINT_PURCHASE (
+    id,
+    userId,
+    point
+)
+VALUES (
+    UUID(),
+    '3f73a9e7-1a6c-4f5e-9025-7787a1ef7c9e',
+    1000
 );

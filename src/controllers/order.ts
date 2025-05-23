@@ -7,6 +7,8 @@ import OrderDetails from '../models/order-details';
 import { mailService } from '../config/mail.config';
 import { Op } from 'sequelize';
 import Label from '../models/label';
+import PointPurchase from '../models/point-purchase';
+import { caculatorLevelUser } from '../utils/caculator-level-user';
 
 export const getOrders = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -59,6 +61,7 @@ export const getOrderPagination = async (
         const orders = await Order.findAndCountAll({
             limit: Number(limit),
             offset,
+            order: [['createdAt', 'DESC']],
         });
         const orderIds = orders.rows.map((order) => order.id);
         const orderDetails = await OrderDetails.findAll({
@@ -105,7 +108,32 @@ export const createOrder = async (
             return;
         }
 
-        const { idBook, nameClient, phoneNumber, address, note, quantity = 1 } = req.body;
+        const {
+            idBook,
+            nameClient,
+            phoneNumber,
+            address,
+            note,
+            quantity = 1,
+        } = req.body;
+
+        // update point purchase & level user
+        const pointPurchase = await PointPurchase.findOne({
+            where: { userId },
+        });
+        if (pointPurchase) {
+            await caculatorLevelUser(pointPurchase.point + quantity, userId);
+            await pointPurchase.update({
+                point: pointPurchase.point + quantity,
+            });
+        } else {
+            await PointPurchase.create({
+                id: uuidv4(),
+                userId,
+                point: quantity,
+            });
+            await caculatorLevelUser(quantity, userId);
+        }
 
         if (!idBook || !nameClient || !phoneNumber || !address) {
             res.status(400).json({
@@ -215,6 +243,7 @@ Chúng tôi sẽ liên hệ với bạn để xác nhận đơn hàng trong th�
             },
         });
     } catch (error) {
+        console.log('Error creating order:', error);
         res.status(500).json({ message: 'Lỗi server' });
     }
 };

@@ -1,5 +1,5 @@
-import { DataTypes, Model } from "sequelize";
-import sequelize from "../config/database";
+import { DataTypes, Model } from 'sequelize';
+import sequelize from '../config/database';
 
 interface OrderDetailsInstance {
     id: string;
@@ -9,7 +9,10 @@ interface OrderDetailsInstance {
     price: number;
 }
 
-class OrderDetails extends Model<OrderDetailsInstance> implements OrderDetailsInstance {
+class OrderDetails
+    extends Model<OrderDetailsInstance>
+    implements OrderDetailsInstance
+{
     public id!: string;
     public orderId!: string;
     public bookId!: string;
@@ -44,8 +47,8 @@ OrderDetails.init(
     },
     {
         sequelize,
-        tableName: "order_details",
-        timestamps: false
+        tableName: 'order_details',
+        timestamps: false,
     }
 );
 

@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
+import LevelUser from '../models/level-user';
 
 dotenv.config();
 
@@ -64,6 +65,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             password: hashedPassword,
             role: 'user',
         });
+
+        await LevelUser.create({
+            id: uuidv4(),
+            userId: newUser.id,
+            level: 2,
+        })
 
         res.status(201).json({
             message: 'Đăng ký thành công!',

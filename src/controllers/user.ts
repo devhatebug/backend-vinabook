@@ -2,6 +2,7 @@ import { Response, Request } from 'express';
 import User from '../models/user';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import LevelUser from '../models/level-user';
 
 export const getAllUsers = async (
     req: Request,
@@ -25,8 +26,20 @@ export const getAllUsers = async (
         }
 
         const users = await User.findAll();
+        const userIds = users.map((user) => user.id);
+        const levelUsers = await LevelUser.findAll({
+            where: { userId: userIds },
+        });
         res.status(200).json({
-            users,
+            users: users.map((user) => {
+                return {
+                    ...user.toJSON(),
+                    level:
+                        levelUsers.find(
+                            (levelUser) => levelUser.userId === user.id
+                        )?.level || 2,
+                };
+            }),
             message: 'Lấy danh sách người dùng thành công!',
         });
     } catch (error) {
@@ -68,8 +81,21 @@ export const getUserPagination = async (
             offset,
         });
 
+        const userIds = users.rows.map((user) => user.id);
+        const levelUsers = await LevelUser.findAll({
+            where: { userId: userIds },
+        });
+
         res.status(200).json({
-            users: users.rows,
+            users: users.rows.map((user) => {
+                return {
+                    ...user.toJSON(),
+                    level:
+                        levelUsers.find(
+                            (levelUser) => levelUser.userId === user.id
+                        )?.level || 2,
+                };
+            }),
             totalPages: Math.ceil(users.count / limit),
             currentPage: page,
             message: 'Lấy danh sách người dùng thành công!',
@@ -172,6 +198,12 @@ export const createUser = async (
             username,
             password: hashedPassword,
             role,
+        });
+
+        await LevelUser.create({
+            id: uuidv4(),
+            userId: newUser.id,
+            level: 2,
         });
 
         res.status(201).json({
